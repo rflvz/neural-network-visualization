@@ -54,11 +54,78 @@ function init() {
     createScene();
     createUI();
     setupTheoryToggle();
+    setupPanelResize();
     updateMathDisplay();
     updateValuesFromInputs();
     animate();
     
     window.addEventListener('resize', onWindowResize);
+}
+
+function setupPanelResize() {
+    const resizeHandle = document.getElementById('resize-handle');
+    const controlPanel = document.getElementById('control-panel');
+    
+    if (!resizeHandle || !controlPanel) return;
+    
+    let isResizing = false;
+    let startX = 0;
+    let startWidth = 0;
+    
+    resizeHandle.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        startX = e.clientX;
+        startWidth = controlPanel.offsetWidth;
+        resizeHandle.classList.add('dragging');
+        document.body.style.cursor = 'ew-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        
+        const deltaX = e.clientX - startX;
+        const newWidth = Math.min(Math.max(startWidth + deltaX, 320), 700);
+        controlPanel.style.width = newWidth + 'px';
+        
+        // Actualizar la visualización 3D
+        onWindowResize();
+    });
+    
+    document.addEventListener('mouseup', () => {
+        if (isResizing) {
+            isResizing = false;
+            resizeHandle.classList.remove('dragging');
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+        }
+    });
+    
+    // Soporte táctil
+    resizeHandle.addEventListener('touchstart', (e) => {
+        isResizing = true;
+        startX = e.touches[0].clientX;
+        startWidth = controlPanel.offsetWidth;
+        resizeHandle.classList.add('dragging');
+        e.preventDefault();
+    });
+    
+    document.addEventListener('touchmove', (e) => {
+        if (!isResizing) return;
+        
+        const deltaX = e.touches[0].clientX - startX;
+        const newWidth = Math.min(Math.max(startWidth + deltaX, 320), 700);
+        controlPanel.style.width = newWidth + 'px';
+        onWindowResize();
+    });
+    
+    document.addEventListener('touchend', () => {
+        if (isResizing) {
+            isResizing = false;
+            resizeHandle.classList.remove('dragging');
+        }
+    });
 }
 
 function setupThreeJS() {
