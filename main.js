@@ -1,6 +1,6 @@
 /**
  * VISUALIZACIÓN NEURONAL z = Wx + b
- * Representación interactiva con Three.js - VERSIÓN MEJORADA
+ * Representación interactiva con Three.js - VERSIÓN DINÁMICA
  */
 
 import * as THREE from 'three';
@@ -9,6 +9,13 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // ============================================
 // CONFIGURACIÓN INICIAL
 // ============================================
+
+// Número de neuronas (dinámico)
+let numInputNeurons = 3;
+let numOutputNeurons = 3;
+
+// Velocidad de animación (1 = normal, 0.5 = lento, 2 = rápido)
+let animationSpeed = 1;
 
 // Valores por defecto del ejercicio
 const defaultW = [
@@ -55,11 +62,139 @@ function init() {
     createUI();
     setupTheoryToggle();
     setupPanelResize();
+    setupSpeedControl();
+    setupNeuronControls();
     updateMathDisplay();
     updateValuesFromInputs();
     animate();
     
     window.addEventListener('resize', onWindowResize);
+}
+
+function setupSpeedControl() {
+    const slider = document.getElementById('speed-slider');
+    const display = document.getElementById('speed-display');
+    
+    if (slider && display) {
+        slider.addEventListener('input', (e) => {
+            animationSpeed = parseFloat(e.target.value);
+            display.textContent = animationSpeed.toFixed(1) + 'x';
+        });
+    }
+}
+
+function setupNeuronControls() {
+    // Controles de neuronas de entrada
+    const inputMinus = document.getElementById('input-neurons-minus');
+    const inputPlus = document.getElementById('input-neurons-plus');
+    const inputDisplay = document.getElementById('input-neurons-count');
+    
+    if (inputMinus && inputPlus && inputDisplay) {
+        inputMinus.addEventListener('click', () => {
+            if (numInputNeurons > 1) {
+                numInputNeurons--;
+                inputDisplay.textContent = numInputNeurons;
+                resizeNetwork();
+            }
+        });
+        
+        inputPlus.addEventListener('click', () => {
+            if (numInputNeurons < 8) {
+                numInputNeurons++;
+                inputDisplay.textContent = numInputNeurons;
+                resizeNetwork();
+            }
+        });
+    }
+    
+    // Controles de neuronas de salida
+    const outputMinus = document.getElementById('output-neurons-minus');
+    const outputPlus = document.getElementById('output-neurons-plus');
+    const outputDisplay = document.getElementById('output-neurons-count');
+    
+    if (outputMinus && outputPlus && outputDisplay) {
+        outputMinus.addEventListener('click', () => {
+            if (numOutputNeurons > 1) {
+                numOutputNeurons--;
+                outputDisplay.textContent = numOutputNeurons;
+                resizeNetwork();
+            }
+        });
+        
+        outputPlus.addEventListener('click', () => {
+            if (numOutputNeurons < 8) {
+                numOutputNeurons++;
+                outputDisplay.textContent = numOutputNeurons;
+                resizeNetwork();
+            }
+        });
+    }
+}
+
+function resizeNetwork() {
+    // Redimensionar matriz W
+    const newW = [];
+    for (let i = 0; i < numOutputNeurons; i++) {
+        newW[i] = [];
+        for (let j = 0; j < numInputNeurons; j++) {
+            // Mantener valores existentes o usar valor aleatorio
+            if (W[i] && W[i][j] !== undefined) {
+                newW[i][j] = W[i][j];
+            } else {
+                newW[i][j] = parseFloat((Math.random() * 2 - 1).toFixed(1));
+            }
+        }
+    }
+    W = newW;
+    
+    // Redimensionar vector x
+    const newX = [];
+    for (let i = 0; i < numInputNeurons; i++) {
+        if (x[i] !== undefined) {
+            newX[i] = x[i];
+        } else {
+            newX[i] = Math.floor(Math.random() * 10) + 1;
+        }
+    }
+    x = newX;
+    
+    // Redimensionar vector b
+    const newB = [];
+    for (let i = 0; i < numOutputNeurons; i++) {
+        if (b[i] !== undefined) {
+            newB[i] = b[i];
+        } else {
+            newB[i] = parseFloat((Math.random() * 2 - 1).toFixed(1));
+        }
+    }
+    b = newB;
+    
+    // Actualizar UI y escena
+    createMatrixInputs();
+    createVectorInputs();
+    updateMathDisplay();
+    updateResultsDisplay();
+    createScene();
+}
+
+function updateResultsDisplay() {
+    // Actualizar contenedores de resultados Wx
+    const wxContainer = document.getElementById('wx-values');
+    wxContainer.innerHTML = '';
+    for (let i = 0; i < numOutputNeurons; i++) {
+        const span = document.createElement('span');
+        span.textContent = '—';
+        wxContainer.appendChild(span);
+    }
+    
+    // Actualizar contenedores de resultados z
+    const zContainer = document.getElementById('z-values');
+    zContainer.innerHTML = '';
+    for (let i = 0; i < numOutputNeurons; i++) {
+        const span = document.createElement('span');
+        span.textContent = '—';
+        zContainer.appendChild(span);
+    }
 }
 
 function setupPanelResize() {
@@ -215,14 +350,21 @@ function clearScene() {
 function createNeurons() {
     const inputX = -4;
     const outputX = 4;
-    const spacing = 3;
+    
+    // Calcular espaciado dinámico
+    const maxNeurons = Math.max(numInputNeurons, numOutputNeurons);
+    const spacing = Math.min(3, 10 / maxNeurons);
     
     const neuronGeometry = new THREE.SphereGeometry(0.5, 32, 32);
     const glowGeometry = new THREE.SphereGeometry(0.7, 32, 32);
     
+    // Calcular offset para centrar las neuronas
+    const inputOffset = ((numInputNeurons - 1) * spacing) / 2;
+    const outputOffset = ((numOutputNeurons - 1) * spacing) / 2;
+    
     // Neuronas de entrada
-    for (let i = 0; i < 3; i++) {
-        const y = (1 - i) * spacing;
+    for (let i = 0; i < numInputNeurons; i++) {
+        const y = inputOffset - i * spacing;
         
         const material = new THREE.MeshStandardMaterial({
             color: COLORS.inputNeuron,
@@ -261,8 +403,8 @@ function createNeurons() {
     }
     
     // Neuronas de salida
-    for (let i = 0; i < 3; i++) {
-        const y = (1 - i) * spacing;
+    for (let i = 0; i < numOutputNeurons; i++) {
+        const y = outputOffset - i * spacing;
         
         const material = new THREE.MeshStandardMaterial({
             color: COLORS.outputNeuron,
@@ -302,31 +444,30 @@ function createNeurons() {
     
     // Etiquetas de capa
     const inputLayerLabel = createTextSprite('Capa de Entrada (x)', 0xffffff, 0.4);
-    inputLayerLabel.position.set(inputX, 5, 0);
+    inputLayerLabel.position.set(inputX, inputOffset + 2, 0);
     scene.add(inputLayerLabel);
     labels.push(inputLayerLabel);
     
     const outputLayerLabel = createTextSprite('Capa de Salida (z)', 0xffffff, 0.4);
-    outputLayerLabel.position.set(outputX, 5, 0);
+    outputLayerLabel.position.set(outputX, outputOffset + 2, 0);
     scene.add(outputLayerLabel);
     labels.push(outputLayerLabel);
 }
 
 function createConnections() {
     // Profundidades Z diferentes para cada neurona de entrada
-    // Esto crea separación visual entre las conexiones
-    const depthByInputNeuron = [1, 2.5, 4];
+    const maxDepth = 4;
     
-    for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
+    for (let i = 0; i < numOutputNeurons; i++) {
+        for (let j = 0; j < numInputNeurons; j++) {
             const weight = W[i][j];
             const startPos = inputNeurons[j].mesh.position;
             const endPos = outputNeurons[i].mesh.position;
             
             const color = weight >= 0 ? COLORS.positiveWeight : COLORS.negativeWeight;
             
-            // Usar profundidad Z diferente según la neurona de entrada (j)
-            const zDepth = depthByInputNeuron[j];
+            // Usar profundidad Z diferente según la neurona de entrada
+            const zDepth = (j / (numInputNeurons - 1 || 1)) * maxDepth + 0.5;
             
             const curve = new THREE.QuadraticBezierCurve3(
                 startPos.clone(),
@@ -463,7 +604,6 @@ function checkIntersections() {
             highlightObject(obj);
             showTooltip(obj);
         }
-        // Si hay una neurona siendo hovereada, no hacer nada más con las conexiones
         return;
     } else {
         if (hoveredObject) {
@@ -478,7 +618,6 @@ function checkIntersections() {
     if (lineIntersects.length > 0) {
         const connection = connections.find(c => c.line === lineIntersects[0].object);
         if (connection) {
-            // Resaltar solo la conexión bajo el cursor
             connections.forEach(c => {
                 if (c === connection) {
                     c.label.visible = true;
@@ -491,7 +630,6 @@ function checkIntersections() {
             });
         }
     } else {
-        // Restaurar todas las conexiones a su estado normal
         connections.forEach(c => {
             c.label.visible = false;
             c.line.material.color.setHex(c.originalColor);
@@ -506,9 +644,7 @@ function highlightObject(obj) {
     
     const data = obj.userData;
     
-    // Resaltar conexiones relacionadas con esta neurona
     if (data.type === 'input') {
-        // Resaltar todas las conexiones que salen de esta neurona de entrada
         connections.forEach(c => {
             if (c.inputIndex === data.index) {
                 c.line.material.opacity = 1;
@@ -519,7 +655,6 @@ function highlightObject(obj) {
             }
         });
     } else if (data.type === 'output') {
-        // Resaltar todas las conexiones que llegan a esta neurona de salida
         connections.forEach(c => {
             if (c.outputIndex === data.index) {
                 c.line.material.opacity = 1;
@@ -536,7 +671,6 @@ function resetHover(obj) {
     obj.material.emissiveIntensity = 0.3;
     obj.scale.setScalar(1);
     
-    // Restaurar todas las conexiones
     connections.forEach(c => {
         c.line.material.color.setHex(c.originalColor);
         c.line.material.opacity = Math.min(0.3 + Math.abs(c.weight) * 0.5, 0.9);
@@ -550,32 +684,36 @@ function showTooltip(obj) {
     
     if (data.type === 'input') {
         const j = data.index;
-        // Mostrar los pesos que salen de esta neurona de entrada hacia cada neurona de salida
+        let weightsHtml = '';
+        for (let i = 0; i < numOutputNeurons; i++) {
+            weightsHtml += `<tr><td>→ z₍${i+1}₎:</td><td class="weight-value ${W[i][j] >= 0 ? 'positive' : 'negative'}">w₍${i+1}₎₍${j+1}₎ = ${W[i][j]}</td></tr>`;
+        }
         html = `
             <h4>Neurona de Entrada x₍${j + 1}₎</h4>
             <p>Valor actual: <span class="value">${x[j]}</span></p>
             <div class="tooltip-divider"></div>
             <p class="tooltip-subtitle">Pesos de salida:</p>
             <table class="weights-table">
-                <tr><td>→ z₍1₎:</td><td class="weight-value ${W[0][j] >= 0 ? 'positive' : 'negative'}">w₁${j+1} = ${W[0][j]}</td></tr>
-                <tr><td>→ z₍2₎:</td><td class="weight-value ${W[1][j] >= 0 ? 'positive' : 'negative'}">w₂${j+1} = ${W[1][j]}</td></tr>
-                <tr><td>→ z₍3₎:</td><td class="weight-value ${W[2][j] >= 0 ? 'positive' : 'negative'}">w₃${j+1} = ${W[2][j]}</td></tr>
+                ${weightsHtml}
             </table>
         `;
     } else if (data.type === 'output') {
         const i = data.index;
         const zVal = calculateZ();
         const wxVal = calculateWx();
-        // Mostrar los pesos que llegan a esta neurona de salida desde cada neurona de entrada
+        
+        let weightsHtml = '';
+        for (let j = 0; j < numInputNeurons; j++) {
+            weightsHtml += `<tr><td>x₍${j+1}₎ →</td><td class="weight-value ${W[i][j] >= 0 ? 'positive' : 'negative'}">w₍${i+1}₎₍${j+1}₎ = ${W[i][j]}</td><td class="calc">× ${x[j]} = ${(W[i][j] * x[j]).toFixed(2)}</td></tr>`;
+        }
+        
         html = `
             <h4>Neurona de Salida z₍${i + 1}₎</h4>
             <p>Pre-activación: <span class="value">${zVal[i].toFixed(2)}</span></p>
             <div class="tooltip-divider"></div>
             <p class="tooltip-subtitle">Pesos de entrada:</p>
             <table class="weights-table">
-                <tr><td>x₍1₎ →</td><td class="weight-value ${W[i][0] >= 0 ? 'positive' : 'negative'}">w${i+1}₁ = ${W[i][0]}</td><td class="calc">× ${x[0]} = ${(W[i][0] * x[0]).toFixed(2)}</td></tr>
-                <tr><td>x₍2₎ →</td><td class="weight-value ${W[i][1] >= 0 ? 'positive' : 'negative'}">w${i+1}₂ = ${W[i][1]}</td><td class="calc">× ${x[1]} = ${(W[i][1] * x[1]).toFixed(2)}</td></tr>
-                <tr><td>x₍3₎ →</td><td class="weight-value ${W[i][2] >= 0 ? 'positive' : 'negative'}">w${i+1}₃ = ${W[i][2]}</td><td class="calc">× ${x[2]} = ${(W[i][2] * x[2]).toFixed(2)}</td></tr>
+                ${weightsHtml}
             </table>
             <div class="tooltip-divider"></div>
             <p class="tooltip-calc">Wx₍${i+1}₎ = <span class="value">${wxVal[i].toFixed(2)}</span></p>
@@ -591,7 +729,6 @@ function showTooltip(obj) {
 function hideTooltip() {
     tooltip.classList.add('hidden');
     
-    // Restaurar conexiones cuando se oculta el tooltip
     connections.forEach(c => {
         c.line.material.color.setHex(c.originalColor);
         c.line.material.opacity = Math.min(0.3 + Math.abs(c.weight) * 0.5, 0.9);
@@ -622,8 +759,11 @@ function createMatrixInputs() {
     const container = document.getElementById('matrix-w');
     container.innerHTML = '';
     
-    for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
+    // Actualizar estilo de grid dinámicamente
+    container.style.gridTemplateColumns = `repeat(${numInputNeurons}, 1fr)`;
+    
+    for (let i = 0; i < numOutputNeurons; i++) {
+        for (let j = 0; j < numInputNeurons; j++) {
             const input = document.createElement('input');
             input.type = 'number';
             input.step = '0.1';
@@ -636,13 +776,19 @@ function createMatrixInputs() {
             container.appendChild(input);
         }
     }
+    
+    // Actualizar etiqueta de dimensiones
+    const dimLabel = document.querySelector('.input-group h3 .dim');
+    if (dimLabel) {
+        dimLabel.textContent = `(${numOutputNeurons}×${numInputNeurons})`;
+    }
 }
 
 function createVectorInputs() {
     // Vector X
     const xContainer = document.getElementById('vector-x');
     xContainer.innerHTML = '';
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < numInputNeurons; i++) {
         const input = document.createElement('input');
         input.type = 'number';
         input.step = '0.1';
@@ -654,10 +800,16 @@ function createVectorInputs() {
         xContainer.appendChild(input);
     }
     
+    // Actualizar etiqueta de dimensiones x
+    const xDimLabel = document.querySelector('#vector-x')?.closest('.input-group')?.querySelector('.dim');
+    if (xDimLabel) {
+        xDimLabel.textContent = `(${numInputNeurons}×1)`;
+    }
+    
     // Vector B
     const bContainer = document.getElementById('vector-b');
     bContainer.innerHTML = '';
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < numOutputNeurons; i++) {
         const input = document.createElement('input');
         input.type = 'number';
         input.step = '0.1';
@@ -665,6 +817,12 @@ function createVectorInputs() {
         input.dataset.index = i;
         input.addEventListener('input', onVectorBChange);
         bContainer.appendChild(input);
+    }
+    
+    // Actualizar etiqueta de dimensiones b
+    const bDimLabel = document.querySelector('#vector-b')?.closest('.input-group')?.querySelector('.dim');
+    if (bDimLabel) {
+        bDimLabel.textContent = `(${numOutputNeurons}×1)`;
     }
 }
 
@@ -697,10 +855,9 @@ function highlightMatrixRow(row) {
         }
     });
     
-    // Resaltar en display matemático
     const wDisplay = document.querySelectorAll('#w-values-display span');
     wDisplay.forEach((span, i) => {
-        if (Math.floor(i / 3) === row) {
+        if (Math.floor(i / numInputNeurons) === row) {
             span.classList.add('highlight');
         }
     });
@@ -735,8 +892,10 @@ function updateMathDisplay() {
     // Actualizar matriz W
     const wDisplay = document.getElementById('w-values-display');
     wDisplay.innerHTML = '';
-    for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
+    wDisplay.style.gridTemplateColumns = `repeat(${numInputNeurons}, 1fr)`;
+    
+    for (let i = 0; i < numOutputNeurons; i++) {
+        for (let j = 0; j < numInputNeurons; j++) {
             const span = document.createElement('span');
             span.textContent = W[i][j];
             span.dataset.row = i;
@@ -748,7 +907,7 @@ function updateMathDisplay() {
     // Actualizar vector x
     const xDisplay = document.getElementById('x-values-display');
     xDisplay.innerHTML = '';
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < numInputNeurons; i++) {
         const span = document.createElement('span');
         span.textContent = x[i];
         xDisplay.appendChild(span);
@@ -757,7 +916,7 @@ function updateMathDisplay() {
     // Actualizar vector b
     const bDisplay = document.getElementById('b-values-display');
     bDisplay.innerHTML = '';
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < numOutputNeurons; i++) {
         const span = document.createElement('span');
         span.textContent = b[i];
         bDisplay.appendChild(span);
@@ -769,9 +928,10 @@ function updateMathDisplay() {
 // ============================================
 
 function calculateWx() {
-    const result = [0, 0, 0];
-    for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
+    const result = [];
+    for (let i = 0; i < numOutputNeurons; i++) {
+        result[i] = 0;
+        for (let j = 0; j < numInputNeurons; j++) {
             result[i] += W[i][j] * x[j];
         }
     }
@@ -788,6 +948,7 @@ function updateValuesFromInputs() {
     wInputs.forEach(input => {
         const row = parseInt(input.dataset.row);
         const col = parseInt(input.dataset.col);
+        if (!W[row]) W[row] = [];
         W[row][col] = parseFloat(input.value) || 0;
     });
     
@@ -850,13 +1011,13 @@ async function animateFullCalculation() {
     clearCalculationPanel();
     showAnimationStatus('Iniciando cálculo z = Wx + b...');
     
-    await delay(500);
+    await delay(500 / animationSpeed);
     await animateStep1();
-    await delay(800);
+    await delay(800 / animationSpeed);
     await animateStep2();
     
     showAnimationStatus('¡Cálculo completado!');
-    await delay(1500);
+    await delay(1500 / animationSpeed);
     hideAnimationStatus();
     disableButtons(false);
 }
@@ -873,12 +1034,11 @@ async function animateStep2Only() {
     if (isAnimating) return;
     disableButtons(true);
     
-    // Calcular Wx primero si no está hecho
     const wxValues = document.querySelectorAll('#wx-values span');
-    if (wxValues[0].textContent === '—') {
+    if (wxValues[0] && wxValues[0].textContent === '—') {
         const wx = calculateWx();
         wxValues.forEach((span, i) => {
-            span.textContent = wx[i].toFixed(2);
+            if (i < wx.length) span.textContent = wx[i].toFixed(2);
         });
     }
     
@@ -890,32 +1050,31 @@ async function animateStep1() {
     isAnimating = true;
     showAnimationStatus('Paso 1: Multiplicación W × x');
     
-    const wx = [0, 0, 0];
+    const wx = [];
+    for (let i = 0; i < numOutputNeurons; i++) wx[i] = 0;
+    
     const wxValues = document.querySelectorAll('#wx-values span');
     
-    // Añadir título del paso
     addCalculationStep({
         type: 'title',
         title: 'PASO 1: Multiplicación Matriz-Vector (W × x)',
         content: 'Cada elemento de z se calcula multiplicando la fila correspondiente de W por el vector x'
     });
     
-    await delay(400);
+    await delay(400 / animationSpeed);
     
-    // Para cada neurona de salida
-    for (let i = 0; i < 3; i++) {
-        wxValues[i].textContent = '...';
-        wxValues[i].classList.add('calculating');
+    for (let i = 0; i < numOutputNeurons; i++) {
+        if (wxValues[i]) {
+            wxValues[i].textContent = '...';
+            wxValues[i].classList.add('calculating');
+        }
         
-        // Mostrar fórmula en overlay 3D
         showCurrentCalculation(`Calculando z₍${i+1}₎`, `Fila ${i+1} de W × vector x`);
         
-        // Calcular productos parciales
         const products = [];
         let sum = 0;
         
-        for (let j = 0; j < 3; j++) {
-            // Resaltar conexión
+        for (let j = 0; j < numInputNeurons; j++) {
             const conn = connections.find(c => c.outputIndex === i && c.inputIndex === j);
             if (conn) {
                 conn.line.material.color.setHex(COLORS.highlight);
@@ -923,15 +1082,12 @@ async function animateStep1() {
                 conn.label.visible = true;
             }
             
-            // Resaltar neurona de entrada
             inputNeurons[j].mesh.material.emissiveIntensity = 0.8;
             inputNeurons[j].glow.material.opacity = 0.4;
             
-            // Resaltar en display matemático
             highlightMathElement('w', i, j);
             highlightMathElement('x', j);
             
-            // Calcular producto
             const product = W[i][j] * x[j];
             products.push({
                 w: W[i][j],
@@ -940,15 +1096,13 @@ async function animateStep1() {
             });
             sum += product;
             
-            // Actualizar display 3D con producto parcial
             updateCurrentCalculation(
                 `z₍${i+1}₎: Calculando término ${j+1}`,
                 `(${W[i][j]}) × (${x[j]}) = ${product.toFixed(2)}`
             );
             
-            await delay(450);
+            await delay(450 / animationSpeed);
             
-            // Restaurar
             inputNeurons[j].mesh.material.emissiveIntensity = 0.3;
             inputNeurons[j].glow.material.opacity = 0.15;
             unhighlightMathElements();
@@ -962,7 +1116,6 @@ async function animateStep1() {
         
         wx[i] = sum;
         
-        // Añadir paso de cálculo detallado al panel
         addCalculationStep({
             type: 'calculation',
             number: i + 1,
@@ -971,18 +1124,18 @@ async function animateStep1() {
             result: sum
         });
         
-        wxValues[i].textContent = sum.toFixed(2);
-        wxValues[i].classList.remove('calculating');
+        if (wxValues[i]) {
+            wxValues[i].textContent = sum.toFixed(2);
+            wxValues[i].classList.remove('calculating');
+        }
         
-        // Actualizar neurona de salida
         outputNeurons[i].mesh.material.emissiveIntensity = 0.6;
         updateSpriteText(outputNeurons[i].label, `z₍${i+1}₎ = ${sum.toFixed(1)}`, COLORS.outputNeuron);
         
-        await delay(300);
+        await delay(300 / animationSpeed);
         outputNeurons[i].mesh.material.emissiveIntensity = 0.3;
     }
     
-    // Mostrar resultado de Wx
     addCalculationStep({
         type: 'result',
         title: 'Resultado de Wx',
@@ -1002,32 +1155,31 @@ async function animateStep2() {
     const z = [];
     const zValues = document.querySelectorAll('#z-values span');
     
-    // Añadir título del paso
     addCalculationStep({
         type: 'title',
         title: 'PASO 2: Suma Vectorial (Wx + b)',
         content: 'Se suma el sesgo b elemento por elemento al resultado de Wx'
     });
     
-    await delay(400);
+    await delay(400 / animationSpeed);
     
-    for (let i = 0; i < 3; i++) {
-        zValues[i].textContent = '...';
-        zValues[i].classList.add('calculating');
+    for (let i = 0; i < numOutputNeurons; i++) {
+        if (zValues[i]) {
+            zValues[i].textContent = '...';
+            zValues[i].classList.add('calculating');
+        }
         
         showCurrentCalculation(`Sumando sesgo b₍${i+1}₎`, `${wx[i].toFixed(2)} + (${b[i]})`);
         
-        // Efecto visual en neurona
         outputNeurons[i].mesh.material.emissive.setHex(COLORS.bias);
         outputNeurons[i].mesh.material.emissiveIntensity = 0.8;
         outputNeurons[i].glow.material.opacity = 0.4;
         
-        await delay(500);
+        await delay(500 / animationSpeed);
         
         const result = wx[i] + b[i];
         z.push(result);
         
-        // Añadir paso al panel
         addCalculationStep({
             type: 'bias',
             number: i + 1,
@@ -1036,8 +1188,10 @@ async function animateStep2() {
             result: result
         });
         
-        zValues[i].textContent = result.toFixed(2);
-        zValues[i].classList.remove('calculating');
+        if (zValues[i]) {
+            zValues[i].textContent = result.toFixed(2);
+            zValues[i].classList.remove('calculating');
+        }
         
         updateSpriteText(outputNeurons[i].label, `z₍${i+1}₎ = ${result.toFixed(2)}`, COLORS.outputNeuron);
         
@@ -1050,22 +1204,20 @@ async function animateStep2() {
             `= ${result.toFixed(2)}`
         );
         
-        await delay(300);
+        await delay(300 / animationSpeed);
     }
     
-    // Resultado final
     addCalculationStep({
         type: 'final',
         title: 'Vector z = Wx + b (Resultado Final)',
         values: z
     });
     
-    // Efecto final en todas las neuronas de salida
     outputNeurons.forEach(n => {
         n.glow.material.opacity = 0.35;
     });
     
-    await delay(600);
+    await delay(600 / animationSpeed);
     
     outputNeurons.forEach(n => {
         n.glow.material.opacity = 0.15;
@@ -1173,7 +1325,7 @@ function hideCurrentCalculation() {
 function highlightMathElement(type, row, col) {
     if (type === 'w') {
         const spans = document.querySelectorAll('#w-values-display span');
-        const index = row * 3 + col;
+        const index = row * numInputNeurons + col;
         if (spans[index]) spans[index].classList.add('active');
     } else if (type === 'x') {
         const spans = document.querySelectorAll('#x-values-display span');
@@ -1188,17 +1340,25 @@ function unhighlightMathElements() {
 }
 
 function resetAll() {
+    // Restaurar valores por defecto
+    numInputNeurons = 3;
+    numOutputNeurons = 3;
+    
     W = JSON.parse(JSON.stringify(defaultW));
     x = [...defaultX];
     b = [...defaultB];
     
+    // Actualizar displays de número de neuronas
+    const inputDisplay = document.getElementById('input-neurons-count');
+    const outputDisplay = document.getElementById('output-neurons-count');
+    if (inputDisplay) inputDisplay.textContent = numInputNeurons;
+    if (outputDisplay) outputDisplay.textContent = numOutputNeurons;
+    
     createMatrixInputs();
     createVectorInputs();
     updateMathDisplay();
+    updateResultsDisplay();
     createScene();
-    
-    document.querySelectorAll('#wx-values span').forEach(s => s.textContent = '—');
-    document.querySelectorAll('#z-values span').forEach(s => s.textContent = '—');
     
     clearCalculationPanel();
     const container = document.getElementById('calculation-container');

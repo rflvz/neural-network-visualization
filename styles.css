@@ -162,6 +162,155 @@ body {
 }
 
 /* ============================================
+   CONTROL DE NEURONAS Y VELOCIDAD
+   ============================================ */
+
+.neurons-control-section,
+.speed-control-section {
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid var(--border-color);
+}
+
+.neurons-control-section h2,
+.speed-control-section h2 {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+    text-align: center;
+}
+
+.neurons-controls {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+}
+
+.neuron-control {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.neuron-control label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.control-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+}
+
+.control-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-violet));
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px var(--accent-cyan-glow);
+}
+
+.control-btn:active {
+    transform: scale(0.95);
+}
+
+.control-value {
+    font-family: var(--font-mono);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    min-width: 30px;
+    text-align: center;
+}
+
+/* Control de Velocidad */
+.speed-control {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: center;
+    padding: 8px 0;
+}
+
+.speed-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+#speed-slider {
+    flex: 1;
+    max-width: 150px;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--bg-secondary);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+}
+
+#speed-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-violet));
+    cursor: pointer;
+    box-shadow: 0 2px 8px var(--accent-cyan-glow);
+    transition: transform var(--transition-fast);
+}
+
+#speed-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+#speed-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-violet));
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 8px var(--accent-cyan-glow);
+}
+
+.speed-display {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 8px;
+}
+
+.speed-display span {
+    font-family: var(--font-mono);
+    color: var(--accent-emerald);
+    font-weight: 600;
+}
+
+/* ============================================
    SECCIÓN DE TEORÍA COLAPSABLE
    ============================================ */
 
