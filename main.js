@@ -246,6 +246,10 @@ function createNeurons() {
 }
 
 function createConnections() {
+    // Profundidades Z diferentes para cada neurona de entrada
+    // Esto crea separación visual entre las conexiones
+    const depthByInputNeuron = [1, 2.5, 4];
+    
     for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
             const weight = W[i][j];
@@ -254,9 +258,12 @@ function createConnections() {
             
             const color = weight >= 0 ? COLORS.positiveWeight : COLORS.negativeWeight;
             
+            // Usar profundidad Z diferente según la neurona de entrada (j)
+            const zDepth = depthByInputNeuron[j];
+            
             const curve = new THREE.QuadraticBezierCurve3(
                 startPos.clone(),
-                new THREE.Vector3(0, (startPos.y + endPos.y) / 2, 2),
+                new THREE.Vector3(0, (startPos.y + endPos.y) / 2, zDepth),
                 endPos.clone()
             );
             
