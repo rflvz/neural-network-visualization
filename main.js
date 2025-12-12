@@ -389,6 +389,8 @@ function checkIntersections() {
             highlightObject(obj);
             showTooltip(obj);
         }
+        // Si hay una neurona siendo hovereada, no hacer nada más con las conexiones
+        return;
     } else {
         if (hoveredObject) {
             resetHover(hoveredObject);
@@ -397,19 +399,29 @@ function checkIntersections() {
         }
     }
     
+    // Solo verificar hover sobre conexiones si NO hay neurona hovereada
     const lineIntersects = raycaster.intersectObjects(connections.map(c => c.line));
-    if (lineIntersects.length > 0 && !hoveredObject) {
+    if (lineIntersects.length > 0) {
         const connection = connections.find(c => c.line === lineIntersects[0].object);
         if (connection) {
-            connection.label.visible = true;
-            connection.line.material.opacity = 1;
+            // Resaltar solo la conexión bajo el cursor
+            connections.forEach(c => {
+                if (c === connection) {
+                    c.label.visible = true;
+                    c.line.material.opacity = 1;
+                    c.line.material.color.setHex(COLORS.highlight);
+                } else {
+                    c.label.visible = false;
+                    c.line.material.opacity = 0.15;
+                }
+            });
         }
     } else {
+        // Restaurar todas las conexiones a su estado normal
         connections.forEach(c => {
             c.label.visible = false;
-            if (!isAnimating) {
-                c.line.material.opacity = Math.min(0.3 + Math.abs(c.weight) * 0.5, 0.9);
-            }
+            c.line.material.color.setHex(c.originalColor);
+            c.line.material.opacity = Math.min(0.3 + Math.abs(c.weight) * 0.5, 0.9);
         });
     }
 }
