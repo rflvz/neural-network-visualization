@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualización Neuronal z = Wx + b</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- KaTeX para renderizar matemáticas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Panel de Control Lateral -->
+        <aside id="control-panel">
+            <header>
+                <h1>Red Neuronal</h1>
+                <p class="subtitle">Transformación Afín z = Wx + b</p>
+            </header>
+
+            <!-- Sección de Teoría Colapsable -->
+            <section class="theory-section">
+                <button class="theory-toggle" id="theory-toggle">
+                    <span class="toggle-icon">▼</span>
+                    <span>Teoría: ¿Qué es z = Wx + b?</span>
+                </button>
+                <div class="theory-content" id="theory-content">
+                    <div class="theory-card">
+                        <h3>Transformación Afín en Redes Neuronales</h3>
+                        <p>La operación <strong>z = Wx + b</strong> es el cálculo fundamental en cada capa neuronal densa (forward pass).</p>
+                        
+                        <div class="component-list">
+                            <div class="component-item">
+                                <span class="component-icon weight">W</span>
+                                <div>
+                                    <strong>Matriz de Pesos</strong>
+                                    <p>Pesos sinápticos que determinan la fuerza de conexión entre neuronas. El aprendizaje ajusta estos valores.</p>
+                                </div>
+                            </div>
+                            <div class="component-item">
+                                <span class="component-icon input">x</span>
+                                <div>
+                                    <strong>Vector de Entrada</strong>
+                                    <p>Activaciones de la capa anterior que se propagan hacia adelante.</p>
+                                </div>
+                            </div>
+                            <div class="component-item">
+                                <span class="component-icon bias">b</span>
+                                <div>
+                                    <strong>Vector de Sesgo</strong>
+                                    <p>Desplaza la función de activación, aumentando la flexibilidad del modelo.</p>
+                                </div>
+                            </div>
+                            <div class="component-item">
+                                <span class="component-icon output">z</span>
+                                <div>
+                                    <strong>Pre-activación</strong>
+                                    <p>Suma ponderada que se pasa a la función de activación: a = f(z)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Visualización Matemática de Matrices -->
+            <section class="math-display-section">
+                <h2>Representación Matemática</h2>
+                <div class="math-equation" id="main-equation">
+                    <div class="matrix-container">
+                        <span class="matrix-label">z</span>
+                        <span class="equals">=</span>
+                        <div class="matrix" id="matrix-w-display">
+                            <div class="bracket left"></div>
+                            <div class="matrix-values" id="w-values-display"></div>
+                            <div class="bracket right"></div>
+                        </div>
+                        <span class="times">×</span>
+                        <div class="vector" id="vector-x-display">
+                            <div class="bracket left"></div>
+                            <div class="vector-values" id="x-values-display"></div>
+                            <div class="bracket right"></div>
+                        </div>
+                        <span class="plus">+</span>
+                        <div class="vector" id="vector-b-display">
+                            <div class="bracket left"></div>
+                            <div class="vector-values" id="b-values-display"></div>
+                            <div class="bracket right"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Inputs Editables -->
+            <section class="inputs-section">
+                <div class="input-group">
+                    <h3>Matriz W <span class="dim">(3×3)</span></h3>
+                    <div class="matrix-grid" id="matrix-w">
+                        <!-- Generado por JS -->
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group half">
+                        <h3>Vector x <span class="dim">(3×1)</span></h3>
+                        <div class="vector-grid" id="vector-x"></div>
+                    </div>
+                    <div class="input-group half">
+                        <h3>Vector b <span class="dim">(3×1)</span></h3>
+                        <div class="vector-grid" id="vector-b"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="controls-section">
+                <button id="btn-animate" class="btn btn-primary">
+                    <span class="icon">▶</span> Animar Cálculo Completo
+                </button>
+                <div class="btn-row">
+                    <button id="btn-step1" class="btn btn-secondary">
+                        Paso 1: W×x
+                    </button>
+                    <button id="btn-step2" class="btn btn-secondary">
+                        Paso 2: +b
+                    </button>
+                </div>
+                <button id="btn-reset" class="btn btn-outline">
+                    ↺ Reiniciar valores
+                </button>
+            </section>
+
+            <!-- Panel de Cálculo Detallado -->
+            <section class="calculation-panel">
+                <h2>Cálculo Paso a Paso</h2>
+                <div class="calculation-container" id="calculation-container">
+                    <div class="calculation-placeholder">
+                        <span class="placeholder-icon">📐</span>
+                        <p>Presiona <strong>"Animar Cálculo"</strong> para ver el proceso matemático detallado</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Resultados -->
+            <section class="results-section">
+                <h2>Resultados</h2>
+                <div class="results-grid">
+                    <div class="result-card" id="result-wx">
+                        <div class="result-header">
+                            <span class="result-label">Wx</span>
+                            <span class="result-step">Paso 1</span>
+                        </div>
+                        <div class="result-vector">
+                            <div class="bracket left small"></div>
+                            <div class="result-values" id="wx-values">
+                                <span>—</span>
+                                <span>—</span>
+                                <span>—</span>
+                            </div>
+                            <div class="bracket right small"></div>
+                        </div>
+                    </div>
+                    <div class="result-card highlight" id="result-z">
+                        <div class="result-header">
+                            <span class="result-label">z = Wx + b</span>
+                            <span class="result-step">Final</span>
+                        </div>
+                        <div class="result-vector">
+                            <div class="bracket left small"></div>
+                            <div class="result-values" id="z-values">
+                                <span>—</span>
+                                <span>—</span>
+                                <span>—</span>
+                            </div>
+                            <div class="bracket right small"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- Canvas de Three.js -->
+        <main id="visualization">
+            <canvas id="neural-canvas"></canvas>
+            
+            <!-- Overlay de fórmulas animadas -->
+            <div id="formula-overlay" class="formula-overlay hidden">
+                <div class="formula-content" id="formula-content"></div>
+            </div>
+            
+            <!-- Panel de cálculo actual en 3D -->
+            <div id="current-calculation" class="current-calculation hidden">
+                <div class="calc-title" id="calc-title">Calculando...</div>
+                <div class="calc-detail" id="calc-detail"></div>
+            </div>
+            
+            <div id="tooltip" class="tooltip hidden"></div>
+            
+            <div id="legend">
+                <div class="legend-item">
+                    <span class="dot input"></span> Neuronas de entrada (x)
+                </div>
+                <div class="legend-item">
+                    <span class="dot output"></span> Neuronas de salida (z)
+                </div>
+                <div class="legend-item">
+                    <span class="line positive"></span> Peso positivo (+)
+                </div>
+                <div class="legend-item">
+                    <span class="line negative"></span> Peso negativo (−)
+                </div>
+            </div>
+            
+            <div id="animation-status" class="hidden">
+                <span class="pulse"></span>
+                <span id="status-text">Calculando...</span>
+            </div>
+        </main>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module" src="main.js?v=3"></script>
+</body>
+</html>
